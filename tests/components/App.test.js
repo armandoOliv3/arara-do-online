@@ -31,7 +31,7 @@ const tituloAviso = (w) => w.find('[data-testid="aviso-titulo"]')
 const clicarAcao = (card, acao) => card.get(`[data-acao="${acao}"]`).trigger('click')
 
 async function novoPedido(w, { cliente = '@ana.souza', peca = 'Blusa ciganinha', cor = 'rosa', jaPeguei = false } = {}) {
-  if (w.find('[data-testid="novo-pedido"]').exists()) await w.get('[data-testid="novo-pedido"]').trigger('click')
+  if (w.get('[data-testid="novo-pedido"]').isVisible()) await w.get('[data-testid="novo-pedido"]').trigger('click')
   await w.get('[data-testid="cliente"]').setValue(cliente)
   await w.get('[data-testid="peca"]').setValue(peca)
   await w.get('[data-testid="cor"]').setValue(cor)
@@ -210,6 +210,20 @@ describe('App inteiro', () => {
     expect(w.get('[data-aba="segurando"]').text()).toContain('1')
   })
 
+  it('"Voltar pra Segurando" reinicia o cronômetro na tela (bug #3)', async () => {
+    const { w } = montarApp({ pedidos: [umPedido({ id: 'a' })] })
+    await clicarAcao(cards(w)[0], 'pegar')
+    await abrirAba(w, 'segurando')
+    await passarMinutos(w, 25)
+    expect(w.get('[data-testid="timer"]').text()).toBe('25 min de 30 min')
+    await clicarAcao(cards(w)[0], 'pagar')
+    await abrirAba(w, 'enviar')
+    await clicarAcao(cards(w)[0], 'voltarSegurando')
+    await abrirAba(w, 'segurando')
+    expect(w.get('[data-testid="timer"]').text()).toBe('0 min de 30 min')
+    expect(cards(w)[0].classes()).not.toContain('atencao')
+  })
+
   it('aviso sem mensagem fecha sozinho em 6 segundos; com mensagem fica aberto', async () => {
     const { w } = montarApp({ pedidos: [umPedido({ id: 'a' }), umPedido({ id: 'b', peca: 'Saia' })] })
     await novoPedido(w, { peca: 'Vestido' })
@@ -247,13 +261,44 @@ describe('App inteiro', () => {
     expect(w.get('[data-canal="whats"]').attributes('aria-pressed')).toBe('true')
   })
 
-  it('formulário: "Fechar" volta para o botão de novo pedido', async () => {
+  it('o formulário começa minimizado: só o botão "+ Novo pedido" aparece', () => {
+    const { w } = montarApp()
+    expect(w.get('[data-testid="novo-pedido"]').isVisible()).toBe(true)
+    expect(w.get('[data-testid="novo-pedido"]').attributes('aria-expanded')).toBe('false')
+    expect(w.get('form').isVisible()).toBe(false)
+  })
+
+  it('"Minimizar" recolhe o formulário e mantém o que já foi digitado', async () => {
     const { w } = montarApp()
     await w.get('[data-testid="novo-pedido"]').trigger('click')
-    expect(w.find('form').exists()).toBe(true)
-    await w.findAll('button').find((b) => b.text() === 'Fechar').trigger('click')
-    expect(w.find('form').exists()).toBe(false)
-    expect(w.find('[data-testid="novo-pedido"]').exists()).toBe(true)
+    expect(w.get('form').isVisible()).toBe(true)
+    expect(w.get('[data-testid="novo-pedido"]').isVisible()).toBe(false)
+    await w.get('[data-testid="cliente"]').setValue('@rascunho')
+
+    await w.get('[data-testid="minimizar"]').trigger('click')
+    expect(w.get('form').isVisible()).toBe(false)
+    expect(w.get('[data-testid="novo-pedido"]').isVisible()).toBe(true)
+
+    await w.get('[data-testid="novo-pedido"]').trigger('click')
+    expect(w.get('[data-testid="cliente"]').element.value).toBe('@rascunho')
+  })
+
+  it.each(['segurando', 'enviar', 'historico'])('o formulário e o botão de novo pedido não aparecem na aba %s', async (aba) => {
+    const { w } = montarApp()
+    await w.get('[data-testid="novo-pedido"]').trigger('click')
+    await abrirAba(w, aba)
+    expect(w.get('[data-testid="area-novo-pedido"]').isVisible()).toBe(false)
+    expect(w.get('form').isVisible()).toBe(false)
+  })
+
+  it('ao voltar para Conferir, o formulário aberto continua aberto com o rascunho', async () => {
+    const { w } = montarApp()
+    await w.get('[data-testid="novo-pedido"]').trigger('click')
+    await w.get('[data-testid="peca"]').setValue('Saia midi')
+    await abrirAba(w, 'enviar')
+    await abrirAba(w, 'conferir')
+    expect(w.get('form').isVisible()).toBe(true)
+    expect(w.get('[data-testid="peca"]').element.value).toBe('Saia midi')
   })
 
   it('sugere no formulário as peças e cores já usadas', async () => {
