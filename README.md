@@ -21,7 +21,7 @@ Em cada passo, o app gera a mensagem pronta para copiar e mandar à cliente ("Se
 
 ## Testes
 
-**128 testes** e cobertura acima de **95%**. Se a cobertura cair abaixo do mínimo configurado, o GitHub Actions falha.
+**193 testes** e cobertura acima de **95%**. Se a cobertura cair abaixo do mínimo configurado, o GitHub Actions falha.
 
 | Tipo | Arquivo | O que cobre |
 |---|---|---|
