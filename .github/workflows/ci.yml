@@ -28,9 +28,39 @@ jobs:
       - name: Rodar os testes com cobertura
         run: npm run test:coverage
 
+  # Testes de ponta a ponta com Playwright, no app gerado, em tamanho de celular
+  ponta-a-ponta:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v7
+
+      - name: Preparar o Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Instalar dependências
+        run: npm install
+
+      - name: Instalar o navegador do Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Rodar os testes de ponta a ponta
+        run: npm run test:e2e
+
+      - name: Guardar o relatório do Playwright
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: relatorio-playwright
+          path: playwright-report
+          retention-days: 14
+          if-no-files-found: ignore
+
   # Só publica o app no GitHub Pages se todos os testes passarem
   publicar:
-    needs: testes
+    needs: [testes, ponta-a-ponta]
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
