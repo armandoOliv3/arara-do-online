@@ -121,18 +121,30 @@ onBeforeUnmount(() => {
       <AbasStatus :aba-atual="preferencias.aba" :contagens="contagens" @trocar="trocarAba" />
     </header>
 
-    <button v-if="!formAberto" type="button" class="btn primary new-toggle" data-testid="novo-pedido" @click="formAberto = true">
-      + Novo pedido
-    </button>
-    <FormNovoPedido
-      v-else
-      :canal-padrao="preferencias.canal"
-      :sugestoes-pecas="unicos('peca')"
-      :sugestoes-cores="unicos('cor')"
-      @adicionar="adicionar"
-      @fechar="formAberto = false"
-      @trocar-canal="(canal) => estado.salvarPreferencias({ canal })"
-    />
+    <!-- Novo pedido: só na aba Conferir. Usa v-show (e não v-if) para o rascunho
+         não se perder ao minimizar ou ao trocar de aba. -->
+    <div v-show="preferencias.aba === 'conferir'" data-testid="area-novo-pedido">
+      <button
+        v-show="!formAberto"
+        type="button"
+        class="btn primary new-toggle"
+        data-testid="novo-pedido"
+        aria-controls="formNovoPedido"
+        :aria-expanded="String(formAberto)"
+        @click="formAberto = true"
+      >
+        + Novo pedido
+      </button>
+      <FormNovoPedido
+        v-show="formAberto"
+        :canal-padrao="preferencias.canal"
+        :sugestoes-pecas="unicos('peca')"
+        :sugestoes-cores="unicos('cor')"
+        @adicionar="adicionar"
+        @fechar="formAberto = false"
+        @trocar-canal="(canal) => estado.salvarPreferencias({ canal })"
+      />
+    </div>
 
     <main data-testid="lista">
       <div v-if="erroAoSalvar" class="banner" role="alert">{{ erroAoSalvar }}</div>
