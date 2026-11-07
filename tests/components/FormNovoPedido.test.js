@@ -120,10 +120,14 @@ describe('Formulário de novo pedido', () => {
     w.unmount()
   })
 
-  it('"Fechar" avisa para fechar o formulário', async () => {
+  it('tem título "Novo pedido" e o botão Minimizar avisa para recolher o formulário', async () => {
     const w = montar()
-    await w.findAll('button').find((b) => b.text() === 'Fechar').trigger('click')
+    expect(w.get('#tituloNovoPedido').text()).toBe('Novo pedido')
+    const minimizar = w.get('[data-testid="minimizar"]')
+    expect(minimizar.attributes('aria-controls')).toBe('formNovoPedido')
+    await minimizar.trigger('click')
     expect(w.emitted('fechar')).toHaveLength(1)
+    expect(w.emitted('adicionar')).toBeUndefined()
     w.unmount()
   })
 })
