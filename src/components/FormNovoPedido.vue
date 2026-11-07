@@ -41,7 +41,21 @@ defineExpose({ form })
 </script>
 
 <template>
-  <form class="new" autocomplete="off" novalidate @submit.prevent="enviar">
+  <form id="formNovoPedido" class="new" autocomplete="off" novalidate aria-labelledby="tituloNovoPedido" @submit.prevent="enviar">
+    <div class="form-head">
+      <h2 id="tituloNovoPedido">Novo pedido</h2>
+      <button
+        type="button"
+        class="btn ghost small"
+        data-testid="minimizar"
+        aria-controls="formNovoPedido"
+        aria-expanded="true"
+        @click="$emit('fechar')"
+      >
+        Minimizar ▴
+      </button>
+    </div>
+
     <div class="row2">
       <div class="field">
         <label for="fCliente">Cliente</label>
@@ -103,7 +117,6 @@ defineExpose({ form })
     <p v-if="erro" class="erro-form" role="alert">{{ erro }}</p>
 
     <div class="form-actions">
-      <button type="button" class="btn ghost" @click="$emit('fechar')">Fechar</button>
       <button type="submit" class="btn primary" data-testid="adicionar">Adicionar</button>
     </div>
   </form>
