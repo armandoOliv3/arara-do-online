@@ -9,6 +9,7 @@ import {
   contarPorAba,
   criarPedido,
   entrouEmConferir,
+  estadoPrazo,
   novoId,
   pedidosDaAba,
 } from '../../src/regras/pedidos'
@@ -116,6 +117,19 @@ describe('Fluxo de status', () => {
     const p = aplicarAcao(pago, 'voltarSegurando', T(6))
     expect(p.status).toBe(STATUS.SEGURANDO)
     expect(p.pagoEm).toBeNull()
+  })
+
+  it('"Voltar pra Segurando" reinicia o cronômetro a partir de agora (bug #3)', () => {
+    // Peça separada às 10:00, paga às 10:25; às 10:26 a lojista volta pra Segurando
+    const pago = umPedido({ status: STATUS.PAGO, seguradoEm: T(0), prazoMin: 30, pagoEm: T(25) })
+    const p = aplicarAcao(pago, 'voltarSegurando', T(26))
+    expect(p.seguradoEm).toBe(T(26))
+    expect(estadoPrazo(p, 30, T(26))).toMatchObject({ minutos: 0, nivel: 'ok' })
+  })
+
+  it('"Voltar pra Segurando" mantém o prazo combinado com a cliente', () => {
+    const pago = umPedido({ status: STATUS.PAGO, seguradoEm: T(0), prazoMin: 45, pagoEm: T(5) })
+    expect(aplicarAcao(pago, 'voltarSegurando', T(6)).prazoMin).toBe(45)
   })
 
   it('pegar sem prazo informado grava o prazo padrão', () => {
