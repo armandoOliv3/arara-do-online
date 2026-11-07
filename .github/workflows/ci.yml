@@ -1,0 +1,67 @@
+name: Testes e publicação
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v7
+
+      - name: Preparar o Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Instalar dependências
+        run: npm install
+
+      # Falha se algum teste quebrar ou se a cobertura cair abaixo do mínimo
+      - name: Rodar os testes com cobertura
+        run: npm run test:coverage
+
+  # Só publica o app no GitHub Pages se todos os testes passarem
+  publicar:
+    needs: testes
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v7
+
+      - name: Preparar o Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Instalar dependências
+        run: npm install
+
+      - name: Gerar o app
+        run: npm run build
+
+      - name: Configurar o GitHub Pages
+        uses: actions/configure-pages@v6
+
+      - name: Enviar o app gerado
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+      - name: Publicar
+        id: deploy
+        uses: actions/deploy-pages@v5
