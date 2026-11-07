@@ -68,7 +68,12 @@ const ACOES = {
   pagar: { de: [STATUS.SEGURANDO], aplicar: (p, agora) => ({ status: STATUS.PAGO, pagoEm: agora }) },
   devolver: { de: [STATUS.SEGURANDO], aplicar: () => ({ status: STATUS.DEVOLVIDO }) },
   enviar: { de: [STATUS.PAGO], aplicar: (p, agora) => ({ status: STATUS.ENVIADO, enviadoEm: agora }) },
-  voltarSegurando: { de: [STATUS.PAGO], aplicar: () => ({ status: STATUS.SEGURANDO, pagoEm: null }) },
+  voltarSegurando: {
+    de: [STATUS.PAGO],
+    // O pagamento foi desfeito: o cronômetro recomeça agora, com o mesmo
+    // prazo combinado com a cliente (senão a peça já voltaria vencida).
+    aplicar: (p, agora) => ({ status: STATUS.SEGURANDO, pagoEm: null, seguradoEm: agora }),
+  },
   reabrir: {
     de: [STATUS.ENVIADO, STATUS.DEVOLVIDO, STATUS.NAO_TEM],
     // Mantém a data de criação original e registra quando foi reaberto.
